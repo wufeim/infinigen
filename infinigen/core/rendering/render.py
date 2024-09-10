@@ -403,6 +403,31 @@ def render_image(
         bpy.context.scene.render.resolution_x = render_resolution_override[0]
         bpy.context.scene.render.resolution_y = render_resolution_override[1]
 
+    camera_annotations = {}
+    mat = camera.matrix_world
+    camera_annotations['matrix_world'] = [
+        list(mat[0]), list(mat[1]), list(mat[2]), list(mat[3])]
+    mat = camera.matrix_world.inverted()
+    camera_annotations['matrix_world_inverted'] = [
+        list(mat[0]), list(mat[1]), list(mat[2]), list(mat[3])]
+    mat = camera.calc_matrix_camera(
+        bpy.context.evaluated_depsgraph_get(),
+        x=bpy.context.scene.render.resolution_x,
+        y=bpy.context.scene.render.resolution_y,
+        scale_x=bpy.context.scene.render.pixel_aspect_x,
+        scale_y=bpy.context.scene.render.pixel_aspect_y)
+    camera_annotations['projection_matrix'] = [
+        list(mat[0]), list(mat[1]), list(mat[2]), list(mat[3])]
+    camera_annotations['camera_location'] = list(camera.location[:])
+    camera_annotations['clip_start'] = camera.data.clip_start
+    camera_annotations['clip_end'] = camera.data.clip_end
+    camera_annotations['pixel_aspect_x'] = bpy.context.scene.render.pixel_aspect_x
+    camera_annotations['pixel_aspect_y'] = bpy.context.scene.render.pixel_aspect_y
+    camera_annotations['resolution_x'] = bpy.context.scene.render.resolution_x
+    camera_annotations['resolution_y'] = bpy.context.scene.render.resolution_y
+    with open(frames_folder / f'cameraannot{get_suffix(dict(frame=1, **indices))}.json', 'w') as fp:
+        json.dump(camera_annotations, fp, indent=4)
+
     # Render the scene
     bpy.context.scene.camera = camera
     with Timer("Actual rendering"):

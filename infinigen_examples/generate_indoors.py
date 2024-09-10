@@ -3,6 +3,7 @@
 # of this source tree.
 
 import argparse
+import json
 import logging
 from pathlib import Path
 
@@ -320,6 +321,25 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
         )
 
     p.run_stage("floating_objs", place_floating, use_chance=False, default=state)
+
+    def get_bbox(obj):
+        assert len(obj.data.vertices) == 8
+        verts = [list(v.co[:]) for v in obj.data.vertices]
+        return verts
+
+    annotations = {'objects': []}
+    objects = butil.get_collection('placeholders').objects
+    for obj in objects:
+        _obj = dict(
+            name=obj.name,
+            location=list(obj.location[:]),
+            rotation_euler=list(obj.rotation_euler[:]),
+            scale=list(obj.scale[:]),
+            dimensions=list(obj.dimensions[:]),
+            bbox=get_bbox(obj))
+        annotations['objects'].append(_obj)
+    with open(output_folder / 'annotations.json', 'w') as fp:
+        json.dump(annotations, fp, indent=4)
 
     door_filter = r.Domain({t.Semantics.Door}, [(cl.AnyRelation(), stages["rooms"])])
     window_filter = r.Domain(
